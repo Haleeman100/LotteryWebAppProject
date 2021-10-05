@@ -24,11 +24,17 @@
                 <div class="field">
                     <div class="control">
                         {{ form.firstname(class="input", placeholder="First Name") }}
+                         {% for error in form.firstname.errors %}
+                            {{ error }}
+                        {% endfor %}
                     </div>
                 </div>
                 <div class="field">
                     <div class="control">
                         {{ form.lastname(class="input", placeholder="Last Name") }}
+                         {% for error in form.lastname.errors %}
+                            {{ error }}
+                        {% endfor %}
                     </div>
                 </div>
                 <div class="field">
@@ -39,17 +45,26 @@
                 <div class="field">
                     <div class="control">
                         {{ form.password(class="input", placeholder="Password") }}
+                        {% for error in form.password.errors %}
+                            {{ error }}
+                        {% endfor %}
                     </div>
                 </div>
                 <div class="field">
                     <div class="control">
                         {{ form.confirm_password(class="input", placeholder="Confirm Password") }}
+                        {% for error in form.confirm_password.errors %}
+                            {{ error }}
+                        {% endfor %}
                     </div>
 
                 </div>
                 <div class="field">
                     <div class="control">
                         {{ form.pin_key(class="input", placeholder="PIN Key") }}
+                        {% for error in form.pin_key.errors %}
+                            {{ error }}
+                        {% endfor %}
                     </div>
                     <div>
                         {# TODO: Add PIN generation setup instructions #}
