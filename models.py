@@ -76,7 +76,6 @@ class Draw(db.Model):
         self.round = round
 
 
-
 def init_db():
     db.drop_all()
     db.create_all()
