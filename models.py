@@ -9,8 +9,12 @@ from werkzeug.security import generate_password_hash
 from app import db
 
 
-def encrypt(data, draw_key):
+def encrypt(data, draw_key):             # encrypt lottery draws data
     return Fernet(draw_key).encrypt(bytes(data, 'utf-8'))
+
+
+def decrypt(data, draw_key):             # decrypt lottery draws data
+    return Fernet(draw_key).decrypt(data).decode("utf-8")
 
 
 class User(db.Model, UserMixin):
@@ -74,6 +78,9 @@ class Draw(db.Model):
         self.match = False
         self.win = win
         self.round = round
+
+    def view_draws(self, draw_key):
+        self.draw = decrypt(self.draw, draw_key)
 
 
 def init_db():

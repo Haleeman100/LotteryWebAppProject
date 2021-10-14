@@ -2,6 +2,8 @@
 import logging
 
 from flask import Blueprint, render_template, request, flash
+from sqlalchemy import desc
+
 from models import User, Draw
 from app import db
 
@@ -11,12 +13,15 @@ lottery_blueprint = Blueprint('lottery', __name__, template_folder='templates')
 
 user = User.query.first()
 draw_key = user.draw_key
-
 # VIEWS
 # view lottery page
 @lottery_blueprint.route('/lottery')
 def lottery():
-    return render_template('lottery.html')
+    draws = Draw.query.order_by(desc('id')).all()
+
+    for d in draws:
+        d.view_draws(draw_key)
+    return render_template('lottery.html', draws=draws)
 
 
 @lottery_blueprint.route('/add_draw', methods=['POST'])
@@ -43,7 +48,8 @@ def add_draw():
 def view_draws():
     # get all draws that have not been played [played=0]
     playable_draws = Draw.query.filter_by(played=False).all()  # TODO: filter playable draws for current user
-
+    for d in playable_draws:
+        d.view_draws(draw_key)
     # if playable draws exist
     if len(playable_draws) != 0:
 
