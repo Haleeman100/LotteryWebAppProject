@@ -1,4 +1,5 @@
 # IMPORTS
+import copy
 import logging
 
 from flask import Blueprint, render_template, request, flash
@@ -15,13 +16,10 @@ user = User.query.first()
 draw_key = user.draw_key
 # VIEWS
 # view lottery page
+
 @lottery_blueprint.route('/lottery')
 def lottery():
-    draws = Draw.query.order_by(desc('id')).all()
-
-    for d in draws:
-        d.view_draws(draw_key)
-    return render_template('lottery.html', draws=draws)
+    return render_template('lottery.html')
 
 
 @lottery_blueprint.route('/add_draw', methods=['POST'])
@@ -48,8 +46,17 @@ def add_draw():
 def view_draws():
     # get all draws that have not been played [played=0]
     playable_draws = Draw.query.filter_by(played=False).all()  # TODO: filter playable draws for current user
+
+    # creates a copy of post object which are independent of database.
+    draw_copies = list(map(lambda x: copy.deepcopy(x), playable_draws))
+
+    # empty list for decrypted coppied post objects
+    decrypted_playable_draws = []
+
     for d in playable_draws:
         d.view_draws(draw_key)
+        decrypted_playable_draws.append(d)
+
     # if playable draws exist
     if len(playable_draws) != 0:
 

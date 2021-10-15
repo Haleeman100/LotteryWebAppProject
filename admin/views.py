@@ -1,4 +1,6 @@
 # IMPORTS
+import copy
+
 from flask import Blueprint, render_template, request, flash
 from app import db
 from lottery.views import draw_key
@@ -65,9 +67,12 @@ def view_winning_draw():
 
     # get winning draw from DB
     current_winning_draw = Draw.query.filter_by(win=True).first()
+
+    # creates a copy of draw object which is independent of database
+    draw_copy = copy.deepcopy(current_winning_draw)
+
+    # decrypt copy of post object.
     current_winning_draw.view_draws(draw_key)
-
-
 
     # if a winning draw exists
     if current_winning_draw:
