@@ -51,8 +51,8 @@ def create_winning_draw():
     # create a new draw object with the form data.
     new_winning_draw = Draw(user_id=0, draw=submitted_draw, win=True, round=round, draw_key=draw_key)
 
-
     # add the new winning draw to the database
+
     db.session.add(new_winning_draw)
     db.session.commit()
 
@@ -90,7 +90,6 @@ def run_lottery():
 
     # get current unplayed winning draw
     current_winning_draw = Draw.query.filter_by(win=True, played=False).first()
-
 
     # if current unplayed winning draw exists
     if current_winning_draw:

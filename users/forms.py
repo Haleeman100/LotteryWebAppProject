@@ -51,3 +51,9 @@ class RegisterForm(FlaskForm):
         p = re.compile(r'\d{4}-\d{3}-\d{4}')
         if not p.match(self.phone.data):
             raise ValidationError("Phone number must be in the form XXXX-XXX-XXXX")
+
+
+class LoginForm(FlaskForm):
+    email = StringField(validators=[Required(), Email()])
+    password = PasswordField(validators=[Required()])
+    submit = SubmitField()
