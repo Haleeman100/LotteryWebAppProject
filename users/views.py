@@ -5,7 +5,7 @@ from functools import wraps
 from flask import Blueprint, render_template, flash, redirect, url_for, request
 import datetime
 from flask_login import current_user
-from flask_login import login_user
+from flask_login import login_user, logout_user
 from werkzeug.security import check_password_hash
 
 from app import db
@@ -94,3 +94,9 @@ def account():
                            firstname="PLACEHOLDER FOR USER FIRSTNAME",
                            lastname="PLACEHOLDER FOR USER LASTNAME",
                            phone="PLACEHOLDER FOR USER PHONE")
+
+
+@users_blueprint.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
