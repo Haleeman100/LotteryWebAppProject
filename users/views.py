@@ -3,7 +3,9 @@ import logging
 from functools import wraps
 
 from flask import Blueprint, render_template, flash, redirect, url_for, request
+import datetime
 from flask_login import current_user
+from flask_login import login_user
 from werkzeug.security import check_password_hash
 
 from app import db
@@ -63,6 +65,14 @@ def login():
             flash('Please check your login details and try again')
 
             return render_template('login.html', form=form)
+
+        login_user(user)
+
+        # checks when user is last and currently logged in
+        user.last_logged_in = user.current_logged_in
+        user.current_logged_in = datetime.now()
+        db.session.add(user)
+        db.session.commit()
 
         return profile()
 
