@@ -2,7 +2,8 @@
 import logging
 from functools import wraps
 
-from flask import Blueprint, render_template, flash, redirect, url_for, request
+from flask import Blueprint, render_template, flash, \
+ redirect, url_for, request, session
 from _datetime import datetime
 from flask_login import current_user
 from flask_login import login_user, logout_user
@@ -57,18 +58,39 @@ def register():
 # view user login
 @users_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
+    # if session attribute logins does not exist create attribute logins
+    if not session.get('logins'):
+        session['logins'] = 0
+    # if login attempts is 3 or more create an error message
+    elif session.get('logins') >= 3:
+        flash('Number of incorrect logins exceeded')
+
     form = LoginForm()
 
     if form.validate_on_submit():
+
+        # increase login attempts by 1
+        session['logins'] += 1
+
         user = User.query.filter_by(email=form.email.data).first()
 
         if not user or not check_password_hash(user.password, form.password.data):
-            flash('Please check your login details and try again')
+
+            # if no match create appropriate error message based on login attempts
+            if session['logins'] == 3:
+                flash('Number of incorrect logins exceeded')
+            elif session['logins'] == 2:
+                flash('Please check your login details and try again. 1 login attempt remaining')
+            else:
+                flash('Please check your login details and try again. 2 login attempts remaining')
 
             return render_template('login.html', form=form)
 
         # verify user's pin_key
         if pyotp.TOTP(user.pin_key).verify(form.pin.data):
+
+            # if user is verified reset login attempts to 0
+            session['logins'] = 0
 
             login_user(user)
 
