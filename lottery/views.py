@@ -17,6 +17,7 @@ draw_key = user.draw_key
 # VIEWS
 # view lottery page
 
+
 @lottery_blueprint.route('/lottery')
 def lottery():
     return render_template('lottery.html')

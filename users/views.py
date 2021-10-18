@@ -3,7 +3,7 @@ import logging
 from functools import wraps
 
 from flask import Blueprint, render_template, flash, redirect, url_for, request
-import datetime
+from _datetime import datetime
 from flask_login import current_user
 from flask_login import login_user, logout_user
 from werkzeug.security import check_password_hash
@@ -12,6 +12,7 @@ from app import db
 from lottery.views import lottery
 from models import User
 from users.forms import RegisterForm, LoginForm
+import pyotp
 
 # CONFIG
 users_blueprint = Blueprint('users', __name__, template_folder='templates')
@@ -66,13 +67,20 @@ def login():
 
             return render_template('login.html', form=form)
 
-        login_user(user)
+        # verify user's pin_key
+        if pyotp.TOTP(user.pin_key).verify(form.pin.data):
+
+            login_user(user)
 
         # checks when user is last and currently logged in
-        user.last_logged_in = user.current_logged_in
-        user.current_logged_in = datetime.now()
-        db.session.add(user)
-        db.session.commit()
+            user.last_logged_in = user.current_logged_in
+            user.current_logged_in = datetime.now()
+            db.session.add(user)
+            db.session.commit()
+
+            # displays error message message if wrong key is used
+        else:
+            flash("You have supplied an invalid 2FA token!", "danger")
 
         return profile()
 
