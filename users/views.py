@@ -5,7 +5,7 @@ from functools import wraps
 from flask import Blueprint, render_template, flash, \
  redirect, url_for, request, session
 from _datetime import datetime
-from flask_login import current_user
+from flask_login import current_user, login_required
 from flask_login import login_user, logout_user
 from werkzeug.security import check_password_hash
 
@@ -49,6 +49,8 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
+        logging.warning('SECURITY - User registration [%s, %s]', form.email.data, request.remote_addr)
+
         # sends user to login page
         return redirect(url_for('users.login'))
     # if request method is GET or form not valid re-render signup page
@@ -83,6 +85,8 @@ def login():
                 flash('Please check your login details and try again. 1 login attempt remaining')
             else:
                 flash('Please check your login details and try again. 2 login attempts remaining')
+            # logging.warning('SECURITY -  invalid login [%s, %s, %s]', current_user, current_user.email,
+                               # request.remote_addr)
 
             return render_template('login.html', form=form)
 
@@ -100,11 +104,19 @@ def login():
             db.session.add(user)
             db.session.commit()
 
+            logging.warning('SECURITY - Log in [%s, %s, %s]', current_user.id, current_user.email,
+                            request.remote_addr)
+
+            # direct to role appropriate page
+            if current_user.role == 'admin':
+                return redirect(url_for('admin.admin'))
+            else:
+                return redirect(url_for('users.profile'))
+
+
             # displays error message message if wrong key is used
         else:
             flash("You have supplied an invalid 2FA token!", "danger")
-
-        return profile()
 
     return render_template('login.html', form=form)
 
@@ -112,21 +124,25 @@ def login():
 # view user profile
 @users_blueprint.route('/profile')
 def profile():
-    return render_template('profile.html', name="PLACEHOLDER FOR FIRSTNAME")
+    return render_template('profile.html', name=current_user.firstname)
 
 
 # view user account
 @users_blueprint.route('/account')
 def account():
     return render_template('account.html',
-                           acc_no="PLACEHOLDER FOR USER ID",
-                           email="PLACEHOLDER FOR USER EMAIL",
-                           firstname="PLACEHOLDER FOR USER FIRSTNAME",
-                           lastname="PLACEHOLDER FOR USER LASTNAME",
-                           phone="PLACEHOLDER FOR USER PHONE")
+                           acc_no=current_user.id,
+                           email=current_user.email,
+                           firstname=current_user.firstname,
+                           lastname=current_user.lastname,
+                           phone=current_user.phone)
 
 
+# logout user
 @users_blueprint.route('/logout')
+@login_required
 def logout():
+    logging.warning('SECURITY - Log out [%s, %s, %s]', current_user.id, current_user.email, request.remote_addr)
+
     logout_user()
     return redirect(url_for('index'))

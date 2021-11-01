@@ -1,29 +1,31 @@
 # IMPORTS
 import copy
 import logging
-
+from flask_login import login_required, current_user
 from flask import Blueprint, render_template, request, flash
 from sqlalchemy import desc
-
-from models import User, Draw
-from app import db
+from models import User , Draw
+from app import db, requires_roles
 
 
 # CONFIG
 lottery_blueprint = Blueprint('lottery', __name__, template_folder='templates')
 
-user = User.query.first()
-draw_key = user.draw_key
+
 # VIEWS
 # view lottery page
 
 
 @lottery_blueprint.route('/lottery')
+@login_required
+@requires_roles('user')
 def lottery():
     return render_template('lottery.html')
 
 
 @lottery_blueprint.route('/add_draw', methods=['POST'])
+@login_required
+@requires_roles('user')
 def add_draw():
     submitted_draw = ''
     for i in range(6):
@@ -31,7 +33,7 @@ def add_draw():
     submitted_draw.strip()
 
     # create a new draw with the form data.
-    new_draw = Draw(user_id=1, draw=submitted_draw, win=False, round=0, draw_key=draw_key)  # TODO: update user_id [user_id=1 is a placeholder]
+    new_draw = Draw(user_id=current_user.id, draw=submitted_draw, win=False, round=0, draw_key=current_user.draw_key)  # TODO: update user_id [user_id=1 is a placeholder]
 
     # add the new draw to the database
     db.session.add(new_draw)
@@ -44,9 +46,11 @@ def add_draw():
 
 # view all draws that have not been played
 @lottery_blueprint.route('/view_draws', methods=['POST'])
+@login_required
+@requires_roles('user')
 def view_draws():
     # get all draws that have not been played [played=0]
-    playable_draws = Draw.query.filter_by(played=False).all()  # TODO: filter playable draws for current user
+    playable_draws = Draw.query.filter_by(user_id=current_user.id).all()  # F TODO: filter playable draws for current user
 
     # creates a copy of post object which are independent of database.
     draw_copies = list(map(lambda x: copy.deepcopy(x), playable_draws))
@@ -55,7 +59,8 @@ def view_draws():
     decrypted_playable_draws = []
 
     for d in playable_draws:
-        d.view_draws(draw_key)
+        #user = User.query.filter_by(id=d.id).first()
+        d.new_draws(current_user.draw_key)
         decrypted_playable_draws.append(d)
 
     # if playable draws exist
@@ -65,14 +70,23 @@ def view_draws():
         return render_template('lottery.html', playable_draws=playable_draws)
     else:
         flash('No playable draws.')
-        return lottery()
+    return lottery()
 
 
 # view lottery results
 @lottery_blueprint.route('/check_draws', methods=['POST'])
+@login_required
+@requires_roles('user')
 def check_draws():
     # get played draws
-    played_draws = Draw.query.filter_by(played=True).all()  # TODO: filter played draws for current user
+    played_draws = Draw.query.filter_by(user_id=current_user.id).all()  # T TODO: filter played draws for current user
+
+    decrypted_played_draws = []
+
+    for d in played_draws:
+        #user = User.query.filter_by(id=d.id).first()
+        d.new_draws(current_user.draw_key)
+        decrypted_played_draws.append(d)
 
     # if played draws exist
     if len(played_draws) != 0:
@@ -86,8 +100,10 @@ def check_draws():
 
 # delete all played draws
 @lottery_blueprint.route('/play_again', methods=['POST'])
+@login_required
+@requires_roles('user')
 def play_again():
-    delete_played = Draw.__table__.delete().where(Draw.played)  # TODO: delete played draws for current user only
+    delete_played = Draw.__table__.delete().where(Draw.id)  # Draw TODO: delete played draws for current user only
     db.session.execute(delete_played)
     db.session.commit()
 

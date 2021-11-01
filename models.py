@@ -1,5 +1,7 @@
 # Imports
 import base64
+import copy
+
 from Crypto.Protocol.KDF import scrypt
 from Crypto.Random import get_random_bytes
 from cryptography.fernet import Fernet
@@ -79,8 +81,9 @@ class Draw(db.Model):
         self.win = win
         self.round = round
 
-    def view_draws(self, draw_key):
+    def new_draws(self, draw_key):
         self.draw = decrypt(self.draw, draw_key)
+        #self.draw = draw_key
 
 
 def init_db():

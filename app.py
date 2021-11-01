@@ -1,22 +1,79 @@
 # IMPORTS
+import logging
 import socket
-from flask import Flask, render_template
-from flask_login import LoginManager
+from functools import wraps
+from flask import Flask, render_template, request
+from flask_login import LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
+from flask_talisman import Talisman
+
+
+# LOGGING
+class SecurityFilter(logging.Filter):
+    def filter(self, record):
+        return "SECURITY" in record.getMessage()
+
+
+fh = logging.FileHandler('LotteryWebAppProject.log', 'w')
+fh.setLevel(logging.WARNING)
+fh.addFilter(SecurityFilter())
+formatter = logging.Formatter('%(asctime)s : %(message)s', '%m/%d/%Y %I:%M:%S %p')
+fh.setFormatter(formatter)
+
+logger = logging.getLogger('')
+logger.propagate = False
+logger.addHandler(fh)
+
+
+
 
 # CONFIG
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lottery.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'LongAndRandomSecretKey'
+app.config['SQLALCHEMY_ECHO'] = True
+
+# Security Headers
+csp = {
+    'default-src': [
+        '\'self\'',
+        'https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css'
+    ],  'script-src': [
+        '\'self\'',
+        '\'unsafe-inline\''
+    ]
+}
+talisman = Talisman(app, content_security_policy=csp)
+
 
 # initialise database
 db = SQLAlchemy(app)
+talisman = Talisman(app)
+
+
+# FUNCTIONS
+def requires_roles(*roles):
+    def wrapper(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if current_user.role not in roles:
+                logging.warning('SECURITY - Unauthorised access attempt [%s, %s, %s, %s]',
+                             current_user.id,
+                             current_user.email,
+                             current_user.role,
+                             request.remote_addr)
+                # Redirect the user to an unauthorised notice!
+                return render_template('403.html')
+            return f(*args, **kwargs)
+        return wrapped
+    return wrapper
 
 
 # HOME PAGE VIEW
 @app.route('/')
 def index():
+    print(request.headers)
     return render_template('index.html')
 
 
